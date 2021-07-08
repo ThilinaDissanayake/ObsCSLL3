@@ -44,7 +44,7 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
                 new ArgValue[]{
                         new ArgValue("save-data", "1",
                                 new SingleChoiceSelector("YES=1,NO=0")),
-                        new ArgValue("swavesweep-count", "16",
+                        new ArgValue("swavesweep-count", "100",
                                 new SingleChoiceSelector("24=24,20=20,16=16,8=8,6=6,4=4,2=2,1=1")), /*Change the swavesweep count here*/
                         new ArgValue("frequency","18000",
                                 new SingleChoiceSelector("250Hz=250,18000Hz=18000,19000Hz=19000,20000Hz=20000,21000Hz=21000")), /*Change the frequency here*/
@@ -194,7 +194,7 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
         private static final String TAG         = "AudioActivity";
         private AudioTrack audioTrack  = null;
         protected short[]           buffer      = null;
-        protected int               SAMPLERATE  = 192000;//44100; // [Hz]
+        protected int               SAMPLERATE  = 44100; // [Hz]
         protected static final int  CHANNEL     = 2;     // 1:MONO, 2:STEREO
         protected static final int  BITRATE     = 16;    // [bit/sec]
 
@@ -266,6 +266,7 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
                 sine_signal = generateSineSignal(i);
                 sweep_signal = generateSweepSignal(i);
                 signal = (sine_signal + sweep_signal)/2.0; // Should be devided by 2 so that the amplitude remains less than 1
+                //signal = sweep_signal;
                 buffer[i] = (short)( signal * Short.MAX_VALUE );
             }
             //for (int i = 0; i < SAMPLES; i++) {
@@ -283,15 +284,14 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
         }
 
         public double generateSweepSignal(int sample){
-            double t = (double)(sample) / SAMPLERATE;
             double signal;
-            double sweep_frequency = 18000;
+            double t = (double)(sample) / SAMPLERATE;
             double fre2 = 21000;
-            double t1 = 0.1;//
-            double b = (fre2-frequency)/t1;
-            if(sample<=44100){
-                signal = amplification * Math.sin(2.0 * Math.PI * (b * t * t / 2 +( sweep_frequency * t)  ));
-                //sweep_signal = amplification * Math.sin(2.0 * Math.PI * (b * t * t / 2 +( sweep_frequency * t)  ));
+            //frequency = 36000; //Remove after testing
+            double t0 = 0.1;
+            double a = (fre2-frequency)/t0;
+            if(sample<=4410) { //This also changes the length of the sweep
+                signal = amplification * Math.sin(2.0 * Math.PI * (a * t * t / 2 + (frequency * t)));
             }
             else{
                 signal = 0.0;
@@ -301,20 +301,20 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
         }
         //tachikawa comment
         //音声の定義
-        public double generateSignal(int sample){
+        /*public double generateSignal(int sample){
 
             double t = (double)(sample) / SAMPLERATE;
-            double tt= (double)(sample) / SAMPLERATE;//
+            //double tt= (double)(sample) / SAMPLERATE;//
             double fre2 = 21000;
             double t0 = duration;
             double t1 = 0.1;//
-            double a = (fre2-frequency)/t0;
+            //double a = (fre2-frequency)/t0;
             double b = (fre2-frequency)/t1;//
             double sweep_frequency = 18000;
             double signal;
             double sine_signal;
             double sweep_signal = 0.0;
-            if(sample<=44100){
+            if(sample<=4410){
                 signal = amplification * Math.sin(2.0 * Math.PI * (b * t * t / 2 +( sweep_frequency * t)  ));
                 //sweep_signal = amplification * Math.sin(2.0 * Math.PI * (b * t * t / 2 +( sweep_frequency * t)  ));
             }
@@ -324,12 +324,12 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
             //sine_signal = amplification * Math.sin(2.0 * Math.PI * sweep_frequency * t);
             ////double signal1 = amplification * Math.sin(2.0 * Math.PI * (b * t * t / 2 +( frequency * t)  ));
 			else{
-                signal = amplification * Math.sin(2.0 * Math.PI * 22000 * t);
+                signal = amplification * Math.sin(2.0 * Math.PI * 17000 * t);
             }
             ////double signal = signal1+amplification * Math.sin(2.0 * Math.PI * frequency * t); //sin wave with a frequency of "frequency"
             //signal = sweep_signal + sine_signal;
             return signal;
-        }
+        }*/
 
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -378,7 +378,7 @@ public final class SwaveSweep implements ILoggingDeviceBuilder {
 
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(250);//Thilina comment: time between each sweep. Change this value to change the time between each sweep.
                     } catch (InterruptedException e) {
                     }
 
