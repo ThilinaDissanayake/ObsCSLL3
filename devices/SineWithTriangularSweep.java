@@ -258,13 +258,14 @@ public final class SineWithTriangularSweep implements ILoggingDeviceBuilder {
 
             //short[] sweep_buffer;
             //short[] inv_sweep_buffer;
-            double sweep_len = 5.0;
-            double sine_len = 5.0;
+            double sweep_len = 0.05; //in seconds
+            double sine_len = 0.25; //in seconds
             int sine_samples = (int) (sine_len * SAMPLERATE);
             int sweep_samples = (int) (sweep_len * SAMPLERATE);
             int inv_sweep_samples = (int) (sweep_len * SAMPLERATE);
 
-            short sine_buffer[] = new short[sine_samples*CHANNEL];
+            short sine18_buffer[] = new short[sine_samples*CHANNEL];
+            short sine21_buffer[] = new short[sine_samples*CHANNEL];
             short sweep_buffer[] = new short[sweep_samples*CHANNEL];
             short inv_sweep_buffer[] = new short[inv_sweep_samples*CHANNEL];
             //sine_buffer = new short[ sine_samples * CHANNEL ];
@@ -274,19 +275,25 @@ public final class SineWithTriangularSweep implements ILoggingDeviceBuilder {
 
             double inv_sweep_signal = 0;
             double sweep_signal = 0;
-            double sine_signal = 0;
+            double sine18_signal = 0;
+            double sine21_signal = 0;
             //for (int i = 0; i < SAMPLES; i++) {
             //    signal = generateSignal(i);
             //    buffer[i] = (short)( signal * Short.MAX_VALUE );
             //}
             for (int i = 0; i < sine_samples; i++) {
-                sine_signal = generateSineSignal(i, sine_len);
-                sine_buffer[i] = (short)( sine_signal * Short.MAX_VALUE );
+                sine18_signal = generateSine18Signal(i, sine_len);
+                sine18_buffer[i] = (short)( sine18_signal * Short.MAX_VALUE );
             }
 
             for (int i = 0; i < sweep_samples; i++) {
                 sweep_signal = generateSweepSignal(i, sweep_len);
                 sweep_buffer[i] = (short)( sweep_signal * Short.MAX_VALUE );
+            }
+
+            for (int i = 0; i < sine_samples; i++) {
+                sine21_signal = generateSine21Signal(i, sine_len);
+                sine21_buffer[i] = (short)( sine21_signal * Short.MAX_VALUE );
             }
 
             for (int i = 0; i < inv_sweep_samples; i++) {
@@ -295,25 +302,40 @@ public final class SineWithTriangularSweep implements ILoggingDeviceBuilder {
             }
 
             //buffer = sine_buffer + sweep_buffer;
-            int fal = sine_buffer.length;
-            int sal = sweep_buffer.length;
-            int tal = inv_sweep_buffer.length;
+            int s21_len = sine21_buffer.length;
+            int s18_len = sine18_buffer.length;
+            int sw_len = sweep_buffer.length;
+            int isw_len = inv_sweep_buffer.length;
             //System.arraycopy(sine_buffer,0, buffer, 0, fal);
             //System.arraycopy(sweep_buffer,0, buffer,fal,sal);
-            short[] result = new short[fal+sal+tal];
-            System.arraycopy(sine_buffer,0, result, 0, fal);
-            System.arraycopy(sweep_buffer,0, result,fal,sal);
-            //int res_len = result.length;
-            System.arraycopy(inv_sweep_buffer,0,result,fal+sal,tal);
-            Log.d("this is my array", "arr: " + Arrays.toString(result));
+            int num_rep = 17;
+            short[] result = new short[(s18_len+sw_len+isw_len+s21_len)*num_rep];
+
+            for (int i=0; i<num_rep; i++) {
+                System.arraycopy(sine18_buffer, 0, result, (s18_len+sw_len+s21_len+isw_len)*i, s18_len);
+                System.arraycopy(sweep_buffer, 0, result, s18_len*(i+1) + (sw_len+s21_len+isw_len)*i, sw_len);
+                System.arraycopy(sine21_buffer, 0, result, (s18_len+sw_len)*(i+1) + (s21_len+isw_len)*i, s21_len);
+                System.arraycopy(inv_sweep_buffer, 0, result, (s18_len+sw_len+s21_len)*(i+1) + (isw_len)*i, isw_len);
+            }
+            /*System.arraycopy(sine_buffer, 0, result, 0, fal);
+                System.arraycopy(sweep_buffer, 0, result, fal, sal);
+                System.arraycopy(inv_sweep_buffer, 0, result, fal + sal, tal);*/
+            //System.arraycopy(sine_buffer,0,result, fal+sal+tal,fal);
             buffer = result;
         }
 
 
-        public double generateSineSignal(int sample, double sine_len) {
+        public double generateSine18Signal(int sample, double sine_len) {
             double t = (double)(sample) / SAMPLERATE;
             double signal;
             signal = amplification * Math.sin(2.0 * Math.PI * 18000 * t);
+            return signal;
+        }
+
+        public double generateSine21Signal(int sample, double sine_len) {
+            double t = (double)(sample) / SAMPLERATE;
+            double signal;
+            signal = amplification * Math.sin(2.0 * Math.PI * 21000 * t);
             return signal;
         }
 
